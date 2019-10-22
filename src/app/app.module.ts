@@ -1,13 +1,41 @@
-import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms';
+import { NgModule, APP_INITIALIZER  } from '@angular/core';
+import { APP_BASE_HREF, DOCUMENT } from '@angular/common';
 
+import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { HelloComponent } from './hello.component';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
+import { IdentityConfigService } from './services/identity-config.service';
+import { PwaService } from './services/pwa.service';
+import { ManifestService } from './services/manifest.service';
+
+export function getBaseLocation(identityConfigService: IdentityConfigService, document: Document) {
+  if (identityConfigService.init(document)) {
+    return identityConfigService.baseHref;
+  }
+  return '/';
+}
 
 @NgModule({
-  imports:      [ BrowserModule, FormsModule ],
-  declarations: [ AppComponent, HelloComponent ],
-  bootstrap:    [ AppComponent ]
+  declarations: [
+    AppComponent
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    ServiceWorkerModule.register('ngsw-worker.js', { enabled: environment.production }),
+  ],
+  providers: [
+    IdentityConfigService,
+    {
+      provide: APP_BASE_HREF,
+      useFactory: getBaseLocation,
+      deps: [IdentityConfigService, DOCUMENT]
+    },
+    PwaService,
+    ManifestService
+  ],
+  bootstrap: [AppComponent]
 })
 export class AppModule { }
